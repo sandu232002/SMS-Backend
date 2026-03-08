@@ -6,7 +6,6 @@ spring:
     name: auth-service
 
   datasource:
-    # Use the Supabase Connection Pooler URL for better stability
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://aws-1-ap-northeast-2.pooler.supabase.com:6543/postgres?sslmode=require&prepareThreshold=0}
     username: ${SPRING_DATASOURCE_USERNAME:postgres.jelihhaimwbeymculhsm}
     password: ${SPRING_DATASOURCE_PASSWORD:@#C2QWe4gte}
