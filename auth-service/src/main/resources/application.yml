@@ -1,0 +1,31 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: auth-service
+
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://aws-1-ap-northeast-2.pooler.supabase.com:6543/postgres?sslmode=require&prepareThreshold=0}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres.jelihhaimwbeymculhsm}
+    password: ${SPRING_DATASOURCE_PASSWORD:@#C2QWe4gte}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    database: postgresql
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+jwt:
+  secret: d9f4c2a7e8b14f5a9c6d3e2f7a1b8c4d9e6f2a7c3b5d8e1f4a9c6d2b7e3f1a8
+  expiration: 86400000
+
+logging:
+  level:
+    com.sms: DEBUG
+    org.springframework.security: DEBUG

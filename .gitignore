@@ -1,0 +1,12 @@
+auth-service/target/
+auth-service/src/main/resources/application.yml
+api-gateway/target/
+api-gateway/src/main/resources/application.yml
+student-service/target/
+student-service/src/main/resources/application.yml
+course-service/target/
+course-service/src/main/resources/application.yml
+enrollment-service/target/
+enrollment-service/src/main/resources/application.yml
+audit-service/target/
+audit-service/src/main/resources/application.yml
