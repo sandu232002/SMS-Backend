@@ -1,2 +1,4 @@
 auth-service/target/
-auth-serviec/src/main/resources/application.yml
+auth-service/src/main/resources/application.yml
+api-gateway/target/
+api-gateway/src/main/resources/application.yml
