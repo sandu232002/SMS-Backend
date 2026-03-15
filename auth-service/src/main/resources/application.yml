@@ -28,7 +28,7 @@ spring:
         format_sql: true
 
 jwt:
-  secret: bXlzdXBlcnNlY3VyZWp3dHNlY3JldGtleWZvcm1pY3Jvc2VydmljZXNzeXN0ZW1wcm9qZWN0MjAyNg==
+  secret: mysupersecurejwtsecretkeyformicroservicessystemproject2026
   expiration: 86400000
 
 logging:
