@@ -3,6 +3,7 @@ package com.sms.student.controller;
 import com.sms.student.dto.StudentDto;
 import com.sms.student.model.DegreeProgram;
 import com.sms.student.repository.DegreeProgramRepository;
+import com.sms.student.repository.StudentRepository;
 import com.sms.student.service.StudentService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -20,6 +21,7 @@ public class StudentController {
 
     private final StudentService studentService;
     private final DegreeProgramRepository degreeProgramRepository;
+    private final StudentRepository studentRepository;
 
     @PostMapping
     public ResponseEntity<StudentDto.ApiResponse<StudentDto.StudentResponse>> createStudent(
@@ -90,5 +92,44 @@ public class StudentController {
         return ResponseEntity.status(HttpStatus.CREATED)
             .body(StudentDto.ApiResponse.success("Degree program created",
                 degreeProgramRepository.save(dp)));
+    }
+
+    @PutMapping("/degree-programs/{id}")
+    public ResponseEntity<StudentDto.ApiResponse<DegreeProgram>> updateDegreeProgram(
+            @PathVariable Long id,
+            @Valid @RequestBody StudentDto.DegreeProgramRequest request) {
+        DegreeProgram existing = degreeProgramRepository.findById(id)
+            .orElse(null);
+        if (existing == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(StudentDto.ApiResponse.error("Degree program not found"));
+        }
+
+        existing.setDegreeName(request.getDegreeName());
+        existing.setDepartmentName(request.getDepartmentName());
+        existing.setCreditValue(request.getCreditValue());
+        existing.setDurationYears(request.getDurationYears());
+
+        return ResponseEntity.ok(StudentDto.ApiResponse.success("Degree program updated",
+            degreeProgramRepository.save(existing)));
+    }
+
+    @DeleteMapping("/degree-programs/{id}")
+    public ResponseEntity<StudentDto.ApiResponse<Void>> deleteDegreeProgram(@PathVariable Long id) {
+        DegreeProgram existing = degreeProgramRepository.findById(id)
+            .orElse(null);
+        if (existing == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(StudentDto.ApiResponse.error("Degree program not found"));
+        }
+
+        boolean inUse = !studentRepository.findByDegreeProgramId(id).isEmpty();
+        if (inUse) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(StudentDto.ApiResponse.error("Cannot delete degree program that has enrolled students"));
+        }
+
+        degreeProgramRepository.delete(existing);
+        return ResponseEntity.ok(StudentDto.ApiResponse.success("Degree program deleted", null));
     }
 }
