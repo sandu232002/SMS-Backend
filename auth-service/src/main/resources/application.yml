@@ -16,7 +16,7 @@ spring:
       minimum-idle: 1           # Keeps 1 connection ready at all times
       idle-timeout: 30000       # Closes idle connections after 30 seconds
       max-lifetime: 1800000     # Refreshes connections every 30 mins
-      connection-timeout: 20000 # Wait 20s for a connection before failing
+      connection-timeout: 30000 # Wait 30s for a connection before failing
 
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
