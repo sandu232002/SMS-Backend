@@ -34,14 +34,14 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
             try {
-                SecretKey key = Keys.hmacShaKeyFor(
-                    Decoders.BASE64.decode(
-                        java.util.Base64.getEncoder().encodeToString(jwtSecret.getBytes())
-                    )
-                );
+                byte[] keyBytes = Decoders.BASE64.decode(jwtSecret);
+                SecretKey key = Keys.hmacShaKeyFor(keyBytes);
 
-                Claims claims = Jwts.parser().verifyWith(key).build()
-                    .parseSignedClaims(token).getPayload();
+                Claims claims = Jwts.parserBuilder()
+                    .setSigningKey(key)
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
 
                 String username = claims.getSubject();
                 String role = claims.get("role", String.class);

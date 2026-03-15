@@ -6,13 +6,19 @@ spring:
     name: auth-service
 
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://aws-1-ap-northeast-2.pooler.supabase.com:6543/postgres?sslmode=require&prepareThreshold=0}
-    username: ${SPRING_DATASOURCE_USERNAME:postgres.jelihhaimwbeymculhsm}
-    password: ${SPRING_DATASOURCE_PASSWORD:@#C2QWe4gte}
+    url: jdbc:postgresql://aws-1-ap-southeast-1.pooler.supabase.com:5432/postgres
+    username: postgres.zojcsoswzkkomlcrfsbh
+    password: DKMohpvUnNdcIEYW
     driver-class-name: org.postgresql.Driver
 
+    hikari:
+      maximum-pool-size: 3      # Limits each service to 3 connections (15 total for 5 services)
+      minimum-idle: 1           # Keeps 1 connection ready at all times
+      idle-timeout: 30000       # Closes idle connections after 30 seconds
+      max-lifetime: 1800000     # Refreshes connections every 30 mins
+      connection-timeout: 20000 # Wait 20s for a connection before failing
+
   jpa:
-    database: postgresql
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
       ddl-auto: update
