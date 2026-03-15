@@ -37,11 +37,11 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 byte[] keyBytes = Decoders.BASE64.decode(jwtSecret);
                 SecretKey key = Keys.hmacShaKeyFor(keyBytes);
 
-                Claims claims = Jwts.parserBuilder()
-                    .setSigningKey(key)
+                Claims claims = Jwts.parser()
+                    .verifyWith(key)
                     .build()
-                    .parseClaimsJws(token)
-                    .getBody();
+                    .parseSignedClaims(token)
+                    .getPayload();
 
                 String username = claims.getSubject();
                 String role = claims.get("role", String.class);
