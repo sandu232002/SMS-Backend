@@ -34,29 +34,32 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
             try {
-                SecretKey key = Keys.hmacShaKeyFor(
-                    Decoders.BASE64.decode(
-                        java.util.Base64.getEncoder().encodeToString(jwtSecret.getBytes())
-                    )
-                );
+                // Using raw bytes to match the plain-text secret in YAML
+                SecretKey key = Keys.hmacShaKeyFor(jwtSecret.getBytes(java.nio.charset.StandardCharsets.UTF_8));
 
                 Claims claims = Jwts.parser().verifyWith(key).build()
                     .parseSignedClaims(token).getPayload();
 
                 String username = claims.getSubject();
                 String role = claims.get("role", String.class);
-                Long adminId = claims.get("adminId", Long.class);
+                
+                Object rawAdminId = claims.get("adminId");
+                Long adminId = rawAdminId instanceof Number ? ((Number) rawAdminId).longValue() : null;
 
                 request.setAttribute("adminId", adminId);
                 request.setAttribute("username", username);
 
+                // Ensure role has ROLE_ prefix for Spring Security
+                String roleWithPrefix = (role != null && role.startsWith("ROLE_")) ? role : "ROLE_" + role;
+
                 var auth = new UsernamePasswordAuthenticationToken(
-                    username, null, List.of(new SimpleGrantedAuthority("ROLE_" + role))
+                    username, token, List.of(new SimpleGrantedAuthority(roleWithPrefix))
                 );
                 SecurityContextHolder.getContext().setAuthentication(auth);
 
             } catch (JwtException e) {
                 log.error("JWT validation failed: {}", e.getMessage());
+                SecurityContextHolder.clearContext();
             }
         }
 
