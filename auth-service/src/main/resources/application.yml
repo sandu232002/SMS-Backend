@@ -1,0 +1,37 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: auth-service
+
+  datasource:
+    url: jdbc:postgresql://aws-1-ap-southeast-1.pooler.supabase.com:5432/postgres
+    username: postgres.zojcsoswzkkomlcrfsbh
+    password: DKMohpvUnNdcIEYW
+    driver-class-name: org.postgresql.Driver
+
+    hikari:
+      maximum-pool-size: 3      # Limits each service to 3 connections (15 total for 5 services)
+      minimum-idle: 1           # Keeps 1 connection ready at all times
+      idle-timeout: 30000       # Closes idle connections after 30 seconds
+      max-lifetime: 1800000     # Refreshes connections every 30 mins
+      connection-timeout: 30000 # Wait 30s for a connection before failing
+
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+jwt:
+  secret: mysupersecurejwtsecretkeyformicroservicessystemproject2026
+  expiration: 86400000
+
+logging:
+  level:
+    com.sms: DEBUG
+    org.springframework.security: DEBUG

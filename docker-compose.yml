@@ -1,0 +1,236 @@
+services:
+
+  # ─────────────────────────────────────────
+  # PostgreSQL Database (local – optional)
+  # Comment this section out if you use Supabase
+  # and remove the "postgres" entries from depends_on below.
+  # ─────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: sms-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: smsdb
+      POSTGRES_USER: ${DB_USERNAME:-smsuser}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-smspassword}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-smsuser} -d smsdb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - sms-network
+
+  # ─────────────────────────────────────────
+  # Auth Service  (port 8081)
+  # ─────────────────────────────────────────
+  auth-service:
+    build:
+      context: ./auth-service
+      dockerfile: Dockerfile
+    image: sms/auth-service:latest
+    container_name: sms-auth-service
+    restart: unless-stopped
+    environment:
+      # Use local postgres:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/smsdb
+      # OR to keep using Supabase, set this in your .env file instead:
+      # SPRING_DATASOURCE_URL: jdbc:postgresql://aws-1-ap-northeast-2.pooler.supabase.com:6543/postgres?sslmode=require&prepareThreshold=0
+      SPRING_DATASOURCE_USERNAME: ${DB_USERNAME:-smsuser}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-smspassword}
+      JWT_SECRET: ${JWT_SECRET:-mysupersecurejwtsecretkeyformicroservicessystemproject2026}
+    ports:
+      - "8081:8081"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8081/actuator/health || wget -qO- http://localhost:8081/api/auth/health || exit 0"]
+      interval: 20s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    networks:
+      - sms-network
+
+  # ─────────────────────────────────────────
+  # Student Service  (port 8082)
+  # ─────────────────────────────────────────
+  student-service:
+    build:
+      context: ./student-service
+      dockerfile: Dockerfile
+    image: sms/student-service:latest
+    container_name: sms-student-service
+    restart: unless-stopped
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/smsdb
+      SPRING_DATASOURCE_USERNAME: ${DB_USERNAME:-smsuser}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-smspassword}
+      JWT_SECRET: ${JWT_SECRET:-mysupersecurejwtsecretkeyformicroservicessystemproject2026}
+      AUDIT_SERVICE_URL: http://audit-service:8085
+    ports:
+      - "8082:8082"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      audit-service:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8082/actuator/health || exit 0"]
+      interval: 20s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    networks:
+      - sms-network
+
+  # ─────────────────────────────────────────
+  # Course Service  (port 8083)
+  # ─────────────────────────────────────────
+  course-service:
+    build:
+      context: ./course-service
+      dockerfile: Dockerfile
+    image: sms/course-service:latest
+    container_name: sms-course-service
+    restart: unless-stopped
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/smsdb
+      SPRING_DATASOURCE_USERNAME: ${DB_USERNAME:-smsuser}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-smspassword}
+      JWT_SECRET: ${JWT_SECRET:-mysupersecurejwtsecretkeyformicroservicessystemproject2026}
+      AUDIT_SERVICE_URL: http://audit-service:8085
+    ports:
+      - "8083:8083"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      audit-service:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8083/actuator/health || exit 0"]
+      interval: 20s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    networks:
+      - sms-network
+
+  # ─────────────────────────────────────────
+  # Enrollment Service  (port 8084)
+  # ─────────────────────────────────────────
+  enrollment-service:
+    build:
+      context: ./enrollment-service
+      dockerfile: Dockerfile
+    image: sms/enrollment-service:latest
+    container_name: sms-enrollment-service
+    restart: unless-stopped
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/smsdb
+      SPRING_DATASOURCE_USERNAME: ${DB_USERNAME:-smsuser}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-smspassword}
+      JWT_SECRET: ${JWT_SECRET:-mysupersecurejwtsecretkeyformicroservicessystemproject2026}
+      STUDENT_SERVICE_URL: http://student-service:8082
+      COURSE_SERVICE_URL: http://course-service:8083
+      AUDIT_SERVICE_URL: http://audit-service:8085
+    ports:
+      - "8084:8084"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      student-service:
+        condition: service_started
+      course-service:
+        condition: service_started
+      audit-service:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8084/actuator/health || exit 0"]
+      interval: 20s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    networks:
+      - sms-network
+
+  # ─────────────────────────────────────────
+  # Audit Service  (port 8085)
+  # ─────────────────────────────────────────
+  audit-service:
+    build:
+      context: ./audit-service
+      dockerfile: Dockerfile
+    image: sms/audit-service:latest
+    container_name: sms-audit-service
+    restart: unless-stopped
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/smsdb
+      SPRING_DATASOURCE_USERNAME: ${DB_USERNAME:-smsuser}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-smspassword}
+      JWT_SECRET: ${JWT_SECRET:-mysupersecurejwtsecretkeyformicroservicessystemproject2026}
+    ports:
+      - "8085:8085"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8085/actuator/health || exit 0"]
+      interval: 20s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    networks:
+      - sms-network
+
+  # ─────────────────────────────────────────
+  # API Gateway  (port 8080 – single entry point)
+  # ─────────────────────────────────────────
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    image: sms/api-gateway:latest
+    container_name: sms-api-gateway
+    restart: unless-stopped
+    environment:
+      JWT_SECRET: ${JWT_SECRET:-mysupersecurejwtsecretkeyformicroservicessystemproject2026}
+      AUTH_SERVICE_URL: http://auth-service:8081
+      STUDENT_SERVICE_URL: http://student-service:8082
+      COURSE_SERVICE_URL: http://course-service:8083
+      ENROLLMENT_SERVICE_URL: http://enrollment-service:8084
+      AUDIT_SERVICE_URL: http://audit-service:8085
+    ports:
+      - "8080:8080"
+    depends_on:
+      auth-service:
+        condition: service_started
+      student-service:
+        condition: service_started
+      course-service:
+        condition: service_started
+      enrollment-service:
+        condition: service_started
+      audit-service:
+        condition: service_started
+    networks:
+      - sms-network
+
+# ─────────────────────────────────────────
+# Shared Network
+# ─────────────────────────────────────────
+networks:
+  sms-network:
+    driver: bridge
+
+# ─────────────────────────────────────────
+# Persistent Volumes
+# ─────────────────────────────────────────
+volumes:
+  postgres_data:
